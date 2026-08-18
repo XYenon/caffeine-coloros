@@ -12,6 +12,7 @@ android {
         targetSdk = 35
         versionCode = 100
         versionName = "1.0.0"
+        multiDexKeepProguard = file("multidex-rules.pro")
     }
 
     buildFeatures {
@@ -23,13 +24,20 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = false
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
         debug {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("debug")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 

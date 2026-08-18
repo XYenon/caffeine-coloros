@@ -40,15 +40,47 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        actionBar?.hide()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         engine = CaffeineEngine.getInstance(this)
 
+        setupCollapsingToolbar()
         setupStatusCard()
         setupControls()
         setupPreferences()
         setupAddTileButton()
+    }
+
+    /**
+     * Material Design 3 Collapsing Top App Bar animation.
+     * Transitions from large title to small app bar title on scroll without any divider line.
+     */
+    private fun setupCollapsingToolbar() {
+        val density = resources.displayMetrics.density
+        val collapseDistance = 48 * density
+
+        binding.topAppBar.alpha = 0f
+        binding.tvSmallTitle.alpha = 0f
+
+        binding.scrollView.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            val progress = (scrollY / collapseDistance).coerceIn(0f, 1f)
+
+            // Large title smoothly fades and scales
+            binding.containerLargeTitle.alpha = (1f - progress * 1.4f).coerceIn(0f, 1f)
+
+            // Top app bar (background + small title) smoothly fades in together on scroll
+            if (progress > 0.3f) {
+                val barProgress = ((progress - 0.3f) / 0.7f).coerceIn(0f, 1f)
+                binding.topAppBar.alpha = barProgress
+                binding.tvSmallTitle.alpha = barProgress
+                binding.tvSmallTitle.translationY = (1f - barProgress) * (4 * density)
+            } else {
+                binding.topAppBar.alpha = 0f
+                binding.tvSmallTitle.alpha = 0f
+            }
+        }
     }
 
     override fun onStart() {

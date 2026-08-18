@@ -123,7 +123,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-medium"
                         android:text="@string/tile_state_off"
-                        android:textColor="#8A938E"
+                        android:textColor="@color/caffeine_inactive"
                         android:textSize="40sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -147,7 +147,7 @@
                     android:stateListAnimator="@null"
                     android:text="@string/btn_toggle"
                     android:textAllCaps="false"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/on_primary_action"
                     android:textSize="15sp"
                     android:textStyle="bold" />
             </LinearLayout>

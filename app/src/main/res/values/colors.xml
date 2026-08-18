@@ -1,26 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#006C50</color>
+    <color name="primary">#007A5A</color>
     <color name="on_primary">#FFFFFF</color>
-    <color name="primary_container">#89F8CE</color>
+    <color name="primary_action">#008766</color>
+    <color name="on_primary_action">#FFFFFF</color>
+    <color name="primary_container">#C7F2E2</color>
     <color name="on_primary_container">#002116</color>
     
-    <color name="secondary">#4C6358</color>
+    <color name="secondary">#46655A</color>
     <color name="on_secondary">#FFFFFF</color>
-    <color name="secondary_container">#CEE9DB</color>
+    <color name="secondary_container">#D4EDE3</color>
     <color name="on_secondary_container">#092017</color>
 
-    <color name="surface">#FBFDF9</color>
-    <color name="on_surface">#191C1B</color>
-    <color name="surface_variant">#DBE5DF</color>
-    <color name="on_surface_variant">#3F4944</color>
+    <color name="surface">#F8FBF9</color>
+    <color name="on_surface">#17201C</color>
+    <color name="surface_variant">#E5ECE8</color>
+    <color name="on_surface_variant">#53615B</color>
 
-    <color name="background">#FBFDF9</color>
-    <color name="on_background">#191C1B</color>
+    <color name="background">#F7FAF8</color>
+    <color name="on_background">#17201C</color>
 
     <color name="card_background">#FFFFFF</color>
-    <color name="card_stroke">#E1E3DF</color>
+    <color name="card_stroke">#DCE5E0</color>
+    <color name="status_background">#FFF5DC</color>
+    <color name="status_stroke">#C68A16</color>
+    <color name="warning">#9A6700</color>
+    <color name="preview_background">#F0F7F4</color>
+    <color name="tonal_button_background">#E1F1EA</color>
+    <color name="ripple_on_primary">#33FFFFFF</color>
+    <color name="ripple_on_tonal">#20000000</color>
 
-    <color name="caffeine_active">#00A878</color>
-    <color name="caffeine_inactive">#8A938E</color>
+    <color name="caffeine_active">#008967</color>
+    <color name="caffeine_inactive">#68766F</color>
 </resources>

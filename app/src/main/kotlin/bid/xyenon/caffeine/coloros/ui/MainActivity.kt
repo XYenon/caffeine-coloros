@@ -5,7 +5,6 @@ import android.app.StatusBarManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
@@ -13,6 +12,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
 import android.view.HapticFeedbackConstants
+import android.view.View
 import android.widget.Toast
 import bid.xyenon.caffeine.coloros.R
 import bid.xyenon.caffeine.coloros.core.CaffeineConfig
@@ -108,19 +108,15 @@ class MainActivity : Activity() {
     }
 
     private fun setupStatusCard() {
-        val isHookActive = isLSPosedHookActive()
-
-        if (isHookActive) {
-            binding.ivStatusIcon.setImageResource(R.drawable.ic_caffeine_full)
-            binding.ivStatusIcon.setColorFilter(Color.parseColor("#006C50"))
-            binding.tvStatusTitle.setText(R.string.status_lsposed_active)
-            binding.tvStatusDesc.setText(R.string.status_lsposed_desc_active)
-        } else {
-            binding.ivStatusIcon.setImageResource(R.drawable.ic_caffeine_empty)
-            binding.ivStatusIcon.setColorFilter(Color.parseColor("#8A938E"))
-            binding.tvStatusTitle.setText(R.string.status_lsposed_inactive)
-            binding.tvStatusDesc.setText(R.string.status_lsposed_desc_inactive)
+        if (isLSPosedHookActive()) {
+            binding.cardStatus.visibility = View.GONE
+            return
         }
+
+        binding.ivStatusIcon.setImageResource(R.drawable.ic_caffeine_empty)
+        binding.ivStatusIcon.setColorFilter(getColor(R.color.warning))
+        binding.tvStatusTitle.setText(R.string.status_lsposed_inactive)
+        binding.tvStatusDesc.setText(R.string.status_lsposed_desc_inactive)
     }
 
     private fun setupControls() {
@@ -202,10 +198,10 @@ class MainActivity : Activity() {
         binding.tvStatePreview.text = stateText
 
         if (isActive) {
-            binding.tvStatePreview.setTextColor(Color.parseColor("#006C50"))
+            binding.tvStatePreview.setTextColor(getColor(R.color.caffeine_active))
             binding.btnToggleCaffeine.setText(R.string.btn_toggle)
         } else {
-            binding.tvStatePreview.setTextColor(Color.parseColor("#8A938E"))
+            binding.tvStatePreview.setTextColor(getColor(R.color.caffeine_inactive))
             binding.btnToggleCaffeine.setText(R.string.btn_toggle)
         }
         // Keep description static so there is no duplicate countdown

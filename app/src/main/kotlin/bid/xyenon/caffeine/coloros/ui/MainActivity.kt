@@ -86,6 +86,7 @@ class MainActivity : Activity() {
     override fun onStart() {
         super.onStart()
         engine.addListener(stateListener)
+        engine.requestStateSync()
         updateUI()
     }
 

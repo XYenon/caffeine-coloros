@@ -95,13 +95,19 @@ class CaffeineEngine(context: Context) {
     private val ipcReceiver = object : BroadcastReceiver() {
         override fun onReceive(c: Context?, intent: Intent?) {
             try {
-                if (intent?.action == CaffeineConfig.ACTION_STATE_CHANGED) {
-                    val senderPid = intent.getIntExtra(EXTRA_SENDER_PID, 0)
-                    if (senderPid != Process.myPid()) {
+                val senderPid = intent?.getIntExtra(EXTRA_SENDER_PID, 0) ?: return
+                if (senderPid == Process.myPid()) return
+
+                when (intent.action) {
+                    CaffeineConfig.ACTION_STATE_CHANGED -> {
                         val duration = intent.getIntExtra(CaffeineConfig.EXTRA_DURATION, CaffeineConfig.OFF_DURATION)
                         val remaining = intent.getIntExtra(CaffeineConfig.EXTRA_SECONDS_REMAINING, 0)
                         Log.d(TAG, "Received IPC sync state: duration=$duration, remaining=$remaining from PID=$senderPid")
                         syncFromRemote(duration, remaining)
+                    }
+                    CaffeineConfig.ACTION_STATE_REQUEST -> {
+                        Log.d(TAG, "Received IPC state request from PID=$senderPid")
+                        broadcastState()
                     }
                 }
             } catch (t: Throwable) {
@@ -129,7 +135,10 @@ class CaffeineEngine(context: Context) {
                 }
 
                 // 2. Custom IPC broadcast receiver for state sync
-                val ipcFilter = IntentFilter(CaffeineConfig.ACTION_STATE_CHANGED)
+                val ipcFilter = IntentFilter().apply {
+                    addAction(CaffeineConfig.ACTION_STATE_CHANGED)
+                    addAction(CaffeineConfig.ACTION_STATE_REQUEST)
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     context.registerReceiver(ipcReceiver, ipcFilter, Context.RECEIVER_EXPORTED)
                 } else {
@@ -154,6 +163,17 @@ class CaffeineEngine(context: Context) {
     fun removeListener(listener: StateListener) {
         synchronized(listeners) {
             listeners.remove(listener)
+        }
+    }
+
+    fun requestStateSync() {
+        try {
+            val intent = Intent(CaffeineConfig.ACTION_STATE_REQUEST).apply {
+                putExtra(EXTRA_SENDER_PID, Process.myPid())
+            }
+            context.sendBroadcast(intent)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to request IPC state sync", t)
         }
     }
 

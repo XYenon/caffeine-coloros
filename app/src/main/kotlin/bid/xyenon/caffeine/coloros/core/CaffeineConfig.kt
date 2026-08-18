@@ -20,6 +20,7 @@ object CaffeineConfig {
     )
 
     const val ACTION_STATE_CHANGED = "bid.xyenon.caffeine.coloros.ACTION_STATE_CHANGED"
+    const val ACTION_STATE_REQUEST = "bid.xyenon.caffeine.coloros.ACTION_STATE_REQUEST"
     const val EXTRA_IS_ACTIVE = "is_active"
     const val EXTRA_SECONDS_REMAINING = "seconds_remaining"
     const val EXTRA_DURATION = "duration"

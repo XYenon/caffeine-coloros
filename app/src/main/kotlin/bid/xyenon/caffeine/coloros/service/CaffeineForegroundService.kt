@@ -47,6 +47,7 @@ class CaffeineForegroundService : Service() {
         super.onCreate()
         createNotificationChannel()
         engine = CaffeineEngine.getInstance(this)
+        engine.setOwnsState(true)
         engine.addListener(stateListener)
     }
 

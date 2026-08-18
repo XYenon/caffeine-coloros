@@ -2,9 +2,9 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-11%20--%2016-green.svg)](https://developer.android.com)
-[![LSPosed](https://img.shields.io/badge/LSPosed-API%20102%20(LibXposed)-orange.svg)](https://github.com/LibXposed)
+[![libxposed](https://img.shields.io/badge/libxposed-API%20102-orange.svg)](https://github.com/LibXposed)
 
-An LSPosed module bringing the classic **LineageOS Caffeine** Quick Settings tile to **OxygenOS & ColorOS** (OnePlus, OPPO, and Realme devices), built with modern **LibXposed (API 102)** and classic Xposed compatibility.
+A modern libxposed module bringing the classic **LineageOS Caffeine** Quick Settings tile to **OxygenOS & ColorOS** (OnePlus, OPPO, and Realme devices), built for **libxposed API 102**.
 
 ---
 
@@ -18,7 +18,8 @@ An LSPosed module bringing the classic **LineageOS Caffeine** Quick Settings til
 - **Deep SystemUI Integration**:
   - **Native In-Process WakeLock**: Acquires `PowerManager.FULL_WAKE_LOCK` directly inside the `com.android.systemui` system process. Completely immune to OxygenOS/ColorOS battery saver and process freezing (`OplusAppFreezer`).
   - **Zero-Latency Response**: Intercepts `QSTileImpl` and `CustomTile` click/state events locally inside SystemUI, avoiding cross-process IPC lag.
-  - **Safe Dual-Engine Bridge**: Employs `HookBridge` to support both modern LibXposed (API 100–102+) and classic Xposed frameworks while completely isolating system tiles (Wi-Fi, Bluetooth, Torch) from interference.
+  - **Modern Hook Bridge**: Uses the libxposed API 102 interceptor API while completely isolating system tiles (Wi-Fi, Bluetooth, Torch) from interference.
+  - **Verified Module Status**: Uses `XposedService` for framework/scope status and a correlated SystemUI handshake to verify that the hook is actually running.
   - **Standalone Fallback**: Includes a standard Android `TileService` and foreground service fallback for operation even without Xposed injection.
 
 ---
@@ -28,7 +29,7 @@ An LSPosed module bringing the classic **LineageOS Caffeine** Quick Settings til
 - **OxygenOS 11 – 16** (Android 11 through Android 16)
 - **ColorOS 12 – 16**
 - **RealmeUI 3.0 – 6.0**
-- Tested on OnePlus 13 (Android 16 / OxygenOS 16.1.0) with LSPosed 2.2 / Vector Framework.
+- Tested on OnePlus 13 (Android 16 / OxygenOS 16.1.0) with Vector Framework 2.2.
 
 ---
 
@@ -41,13 +42,10 @@ An LSPosed module bringing the classic **LineageOS Caffeine** Quick Settings til
      adb install -r app-debug.apk
      ```
 
-2. **Enable in LSPosed / Vector Manager**:
-   - Open **LSPosed Manager**.
+2. **Enable in a libxposed-compatible manager**:
+   - Open **Vector Manager** or another compatible manager.
    - Enable the **Caffeine (咖啡因)** module.
-   - Check the following scopes:
-     - **System UI** (`com.android.systemui`)
-     - **Android System** (`android`)
-     - **Caffeine** (`bid.xyenon.caffeine.coloros`)
+   - Select only **System UI** (`com.android.systemui`) as the scope.
    - Soft reboot SystemUI or reboot the device.
 
 3. **Add the Quick Settings Tile**:
@@ -61,7 +59,7 @@ An LSPosed module bringing the classic **LineageOS Caffeine** Quick Settings til
 
 ### Prerequisites
 - JDK 17 or JDK 21
-- Android SDK (API 35+)
+- Android SDK (API 37+)
 - Gradle 8.x / 9.x
 
 ### Build Commands
@@ -87,16 +85,15 @@ caffeine/
 ├── app/
 │   ├── src/main/
 │   │   ├── kotlin/bid/xyenon/caffeine/coloros/
+│   │   │   ├── CaffeineApplication.kt      # XposedService lifecycle and scope status
 │   │   │   ├── core/
 │   │   │   │   ├── CaffeineEngine.kt       # State machine, WakeLock manager, and ticker
 │   │   │   │   ├── CaffeineConfig.kt       # Duration sequences, action constants
 │   │   │   │   └── TimeFormatter.kt        # Human-readable time formatting
 │   │   │   ├── hook/
-│   │   │   │   ├── HookBridge.kt           # Unified LibXposed / Classic Xposed crash-proof bridge
+│   │   │   │   ├── HookBridge.kt           # LibXposed interceptor bridge
 │   │   │   │   ├── LibXposedEntry.kt       # Modern LibXposed API 102 entry point
-│   │   │   │   ├── XposedEntry.kt          # Classic Xposed entry point
 │   │   │   │   ├── SystemUIHook.kt         # OxygenOS / ColorOS SystemUI tile hook
-│   │   │   │   ├── SystemServerHook.kt     # System server hook
 │   │   │   │   └── DexHelper.kt            # Reflection and DexKit lookup utilities
 │   │   │   ├── provider/
 │   │   │   │   └── SettingsProvider.kt     # IPC content provider

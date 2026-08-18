@@ -1,7 +1,6 @@
 [versions]
 agp = "9.3.1"
 libxposed = "102.0.0"
-xposedApi = "82"
 dexkit = "2.2.0"
 gson = "2.14.0"
 
@@ -9,7 +8,7 @@ gson = "2.14.0"
 dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 libxposed-api = { module = "io.github.libxposed:api", version.ref = "libxposed" }
-xposed-api = { module = "de.robv.android.xposed:api", version.ref = "xposedApi" }
+libxposed-service = { module = "io.github.libxposed:service", version.ref = "libxposed" }
 
 [plugins]
 agp-app = { id = "com.android.application", version.ref = "agp" }

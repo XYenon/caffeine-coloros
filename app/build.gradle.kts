@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "bid.xyenon.caffeine.coloros"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "bid.xyenon.caffeine.coloros"
@@ -48,8 +48,8 @@ android {
 }
 
 dependencies {
-    compileOnly(libs.xposed.api)
     compileOnly(libs.libxposed.api)
+    implementation(libs.libxposed.service)
     implementation(libs.dexkit)
     implementation(libs.gson)
 }

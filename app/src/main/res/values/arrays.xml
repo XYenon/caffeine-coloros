@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string-array name="xposed_scopes">
-        <item>com.android.systemui</item>
-        <item>android</item>
-        <item>bid.xyenon.caffeine.coloros</item>
-    </string-array>
-</resources>

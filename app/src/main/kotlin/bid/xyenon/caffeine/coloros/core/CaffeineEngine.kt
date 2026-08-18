@@ -12,7 +12,7 @@ import android.os.PowerManager
 import android.os.Process
 import android.util.Log
 
-class CaffeineEngine(context: Context, private val ownsState: Boolean) {
+class CaffeineEngine(context: Context, initiallyOwnsState: Boolean) {
 
     companion object {
         private const val TAG = "CaffeineEngine"
@@ -40,6 +40,8 @@ class CaffeineEngine(context: Context, private val ownsState: Boolean) {
     private val handler = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
     private val listeners = mutableListOf<StateListener>()
+    @Volatile
+    private var ownsState = initiallyOwnsState
 
     var durations: IntArray = CaffeineConfig.DEFAULT_DURATIONS
     var resetOnScreenOff: Boolean = true
@@ -117,7 +119,18 @@ class CaffeineEngine(context: Context, private val ownsState: Boolean) {
                     }
                     CaffeineConfig.ACTION_STATE_REQUEST -> {
                         Log.d(TAG, "Received IPC state request from PID=$senderPid")
-                        broadcastState()
+                        if (ownsState) broadcastState()
+                    }
+                    CaffeineConfig.ACTION_HOOK_PING -> {
+                        val token = intent.getStringExtra(CaffeineConfig.EXTRA_REQUEST_TOKEN)
+                        if (ownsState && context.packageName == CaffeineConfig.SYSTEM_UI_PACKAGE && token != null) {
+                            val response = Intent(CaffeineConfig.ACTION_HOOK_PONG).apply {
+                                setPackage(CaffeineConfig.APPLICATION_PACKAGE)
+                                putExtra(CaffeineConfig.EXTRA_REQUEST_TOKEN, token)
+                                putExtra(EXTRA_SENDER_PID, Process.myPid())
+                            }
+                            context.sendBroadcast(response)
+                        }
                     }
                 }
             } catch (t: Throwable) {
@@ -126,7 +139,8 @@ class CaffeineEngine(context: Context, private val ownsState: Boolean) {
         }
     }
 
-    private var isReceiverRegistered = false
+    private var ipcReceiverRegistered = false
+    private var screenReceiverRegistered = false
 
     init {
         registerReceivers()
@@ -134,33 +148,59 @@ class CaffeineEngine(context: Context, private val ownsState: Boolean) {
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag") // The flags overload is unavailable before API 33.
     private fun registerReceivers() {
-        if (!isReceiverRegistered) {
+        registerScreenReceiverIfNeeded()
+        if (!ipcReceiverRegistered) {
             try {
-                // 1. Only the state owner handles screen-off deactivation.
-                if (ownsState) {
-                    val screenFilter = IntentFilter(Intent.ACTION_SCREEN_OFF)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        context.registerReceiver(screenReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
-                    } else {
-                        context.registerReceiver(screenReceiver, screenFilter)
-                    }
-                }
-
-                // 2. Custom IPC broadcast receiver for state sync
                 val ipcFilter = IntentFilter().apply {
                     addAction(CaffeineConfig.ACTION_STATE_CHANGED)
                     addAction(CaffeineConfig.ACTION_STATE_REQUEST)
+                    addAction(CaffeineConfig.ACTION_HOOK_PING)
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     context.registerReceiver(ipcReceiver, ipcFilter, Context.RECEIVER_EXPORTED)
                 } else {
                     context.registerReceiver(ipcReceiver, ipcFilter)
                 }
-                isReceiverRegistered = true
+                ipcReceiverRegistered = true
             } catch (t: Throwable) {
-                Log.e(TAG, "Failed to register receivers", t)
+                Log.e(TAG, "Failed to register IPC receiver", t)
             }
         }
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag") // The flags overload is unavailable before API 33.
+    private fun registerScreenReceiverIfNeeded() {
+        if (!ownsState || screenReceiverRegistered) return
+        try {
+            val screenFilter = IntentFilter(Intent.ACTION_SCREEN_OFF)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.registerReceiver(screenReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
+            } else {
+                context.registerReceiver(screenReceiver, screenFilter)
+            }
+            screenReceiverRegistered = true
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to register screen receiver", t)
+        }
+    }
+
+    @Synchronized
+    fun setOwnsState(value: Boolean) {
+        if (ownsState == value) return
+
+        ownsState = value
+        handler.removeCallbacks(countdownRunnable)
+        if (value) {
+            registerScreenReceiverIfNeeded()
+            if (isActive) acquireWakeLock()
+        } else {
+            releaseWakeLock()
+            if (screenReceiverRegistered) {
+                runCatching { context.unregisterReceiver(screenReceiver) }
+                screenReceiverRegistered = false
+            }
+        }
+        scheduleCountdownIfNeeded()
     }
 
     fun addListener(listener: StateListener) {
@@ -338,14 +378,21 @@ class CaffeineEngine(context: Context, private val ownsState: Boolean) {
 
     fun cleanup() {
         deactivate()
-        if (isReceiverRegistered) {
+        if (ipcReceiverRegistered) {
             try {
                 context.unregisterReceiver(ipcReceiver)
-                if (ownsState) context.unregisterReceiver(screenReceiver)
             } catch (t: Throwable) {
                 // Ignore
             }
-            isReceiverRegistered = false
+            ipcReceiverRegistered = false
+        }
+        if (screenReceiverRegistered) {
+            try {
+                context.unregisterReceiver(screenReceiver)
+            } catch (t: Throwable) {
+                // Ignore
+            }
+            screenReceiverRegistered = false
         }
     }
 }

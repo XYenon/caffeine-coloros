@@ -44,7 +44,7 @@
                     android:textColor="?android:attr/textColorPrimary" />
             </LinearLayout>
 
-            <!-- LSPosed Status Card -->
+            <!-- Module Status Card -->
             <LinearLayout
                 android:id="@+id/cardStatus"
                 android:layout_width="match_parent"
@@ -73,7 +73,7 @@
                         android:id="@+id/tvStatusTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/status_lsposed_active"
+                        android:text="@string/status_module_unavailable"
                         android:textColor="?android:attr/textColorPrimary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -83,7 +83,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="@string/status_lsposed_desc_active"
+                        android:text="@string/status_module_unavailable_desc"
                         android:textColor="?android:attr/textColorSecondary"
                         android:textSize="13sp" />
                 </LinearLayout>

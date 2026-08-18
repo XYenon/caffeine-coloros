@@ -18,56 +18,23 @@ object HookBridge {
         method: Method,
         interceptor: (thisObject: Any?, args: Array<Any?>, proceed: () -> Any?) -> Any?
     ) {
-        val module = libXposedModule
-        if (module != null) {
-            try {
-                module.hook(method).intercept { chain ->
-                    @Suppress("UNCHECKED_CAST")
-                    val argsList = chain.args
-                    val argsArray = if (argsList is List<*>) argsList.toTypedArray() as Array<Any?> else emptyArray<Any?>()
-                    try {
-                        interceptor(chain.thisObject, argsArray) {
-                            chain.proceed()
-                        }
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "Error in hook interceptor for ${method.name}, proceeding default", t)
+        val module = libXposedModule ?: return
+        try {
+            module.hook(method).intercept { chain ->
+                @Suppress("UNCHECKED_CAST")
+                val argsArray = chain.args.toTypedArray() as Array<Any?>
+                try {
+                    interceptor(chain.thisObject, argsArray) {
                         chain.proceed()
                     }
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Error in hook interceptor for ${method.name}, proceeding default", t)
+                    chain.proceed()
                 }
-                Log.d(TAG, "Hooked (LibXposed): ${method.declaringClass.name}.${method.name}")
-                return
-            } catch (t: Throwable) {
-                Log.w(TAG, "LibXposed hook failed for ${method.name}, trying classic", t)
             }
-        }
-
-        // Classic Xposed fallback
-        try {
-            val xcMethodHookClass = DexHelper.findClassIfExists("de.robv.android.xposed.XC_MethodHook", method.declaringClass.classLoader)
-            val xposedBridgeClass = DexHelper.findClassIfExists("de.robv.android.xposed.XposedBridge", method.declaringClass.classLoader)
-            if (xcMethodHookClass != null && xposedBridgeClass != null) {
-                de.robv.android.xposed.XposedBridge.hookMethod(method, object : de.robv.android.xposed.XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
-                        try {
-                            var replaced = false
-                            var replacedResult: Any? = null
-                            val result = interceptor(param.thisObject, param.args) {
-                                // Default proceed
-                                null
-                            }
-                            // If interceptor returned a non-null replacement or explicitly handled
-                            if (result != null) {
-                                param.result = result
-                            }
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Error in classic beforeHookedMethod for ${method.name}", t)
-                        }
-                    }
-                })
-                Log.d(TAG, "Hooked (Classic): ${method.declaringClass.name}.${method.name}")
-            }
+            Log.d(TAG, "Hooked: ${method.declaringClass.name}.${method.name}")
         } catch (t: Throwable) {
-            Log.e(TAG, "Failed to classic hook ${method.name}", t)
+            Log.e(TAG, "Failed to hook ${method.name}", t)
         }
     }
 
@@ -75,46 +42,22 @@ object HookBridge {
         method: Method,
         callback: (thisObject: Any?, args: Array<Any?>, result: Any?) -> Unit
     ) {
-        val module = libXposedModule
-        if (module != null) {
-            try {
-                module.hook(method).intercept { chain ->
-                    val result = chain.proceed()
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        val argsList = chain.args
-                        val argsArray = if (argsList is List<*>) argsList.toTypedArray() as Array<Any?> else emptyArray<Any?>()
-                        callback(chain.thisObject, argsArray, result)
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "Error in hookAfter callback for ${method.name}", t)
-                    }
-                    result
-                }
-                Log.d(TAG, "Hooked (LibXposed) after: ${method.declaringClass.name}.${method.name}")
-                return
-            } catch (t: Throwable) {
-                Log.w(TAG, "LibXposed hookAfter failed for ${method.name}, trying classic", t)
-            }
-        }
-
-        // Classic Xposed fallback
+        val module = libXposedModule ?: return
         try {
-            val xcMethodHookClass = DexHelper.findClassIfExists("de.robv.android.xposed.XC_MethodHook", method.declaringClass.classLoader)
-            val xposedBridgeClass = DexHelper.findClassIfExists("de.robv.android.xposed.XposedBridge", method.declaringClass.classLoader)
-            if (xcMethodHookClass != null && xposedBridgeClass != null) {
-                de.robv.android.xposed.XposedBridge.hookMethod(method, object : de.robv.android.xposed.XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        try {
-                            callback(param.thisObject, param.args, param.result)
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Error in classic afterHookedMethod for ${method.name}", t)
-                        }
-                    }
-                })
-                Log.d(TAG, "Hooked (Classic) after: ${method.declaringClass.name}.${method.name}")
+            module.hook(method).intercept { chain ->
+                val result = chain.proceed()
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val argsArray = chain.args.toTypedArray() as Array<Any?>
+                    callback(chain.thisObject, argsArray, result)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Error in hookAfter callback for ${method.name}", t)
+                }
+                result
             }
+            Log.d(TAG, "Hooked after: ${method.declaringClass.name}.${method.name}")
         } catch (t: Throwable) {
-            Log.e(TAG, "Failed to classic hookAfter ${method.name}", t)
+            Log.e(TAG, "Failed to hookAfter ${method.name}", t)
         }
     }
 
@@ -122,45 +65,21 @@ object HookBridge {
         method: Method,
         callback: (thisObject: Any?, args: Array<Any?>) -> Unit
     ) {
-        val module = libXposedModule
-        if (module != null) {
-            try {
-                module.hook(method).intercept { chain ->
-                    try {
-                        @Suppress("UNCHECKED_CAST")
-                        val argsList = chain.args
-                        val argsArray = if (argsList is List<*>) argsList.toTypedArray() as Array<Any?> else emptyArray<Any?>()
-                        callback(chain.thisObject, argsArray)
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "Error in hookBefore callback for ${method.name}", t)
-                    }
-                    chain.proceed()
-                }
-                Log.d(TAG, "Hooked (LibXposed) before: ${method.declaringClass.name}.${method.name}")
-                return
-            } catch (t: Throwable) {
-                Log.w(TAG, "LibXposed hookBefore failed for ${method.name}, trying classic", t)
-            }
-        }
-
-        // Classic Xposed fallback
+        val module = libXposedModule ?: return
         try {
-            val xcMethodHookClass = DexHelper.findClassIfExists("de.robv.android.xposed.XC_MethodHook", method.declaringClass.classLoader)
-            val xposedBridgeClass = DexHelper.findClassIfExists("de.robv.android.xposed.XposedBridge", method.declaringClass.classLoader)
-            if (xcMethodHookClass != null && xposedBridgeClass != null) {
-                de.robv.android.xposed.XposedBridge.hookMethod(method, object : de.robv.android.xposed.XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
-                        try {
-                            callback(param.thisObject, param.args)
-                        } catch (t: Throwable) {
-                            Log.e(TAG, "Error in classic beforeHookedMethod for ${method.name}", t)
-                        }
-                    }
-                })
-                Log.d(TAG, "Hooked (Classic) before: ${method.declaringClass.name}.${method.name}")
+            module.hook(method).intercept { chain ->
+                try {
+                    @Suppress("UNCHECKED_CAST")
+                    val argsArray = chain.args.toTypedArray() as Array<Any?>
+                    callback(chain.thisObject, argsArray)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Error in hookBefore callback for ${method.name}", t)
+                }
+                chain.proceed()
             }
+            Log.d(TAG, "Hooked before: ${method.declaringClass.name}.${method.name}")
         } catch (t: Throwable) {
-            Log.e(TAG, "Failed to classic hookBefore ${method.name}", t)
+            Log.e(TAG, "Failed to hookBefore ${method.name}", t)
         }
     }
 }

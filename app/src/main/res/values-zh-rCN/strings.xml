@@ -7,10 +7,13 @@
     <string name="tile_state_infinite">∞</string>
     
     <!-- Status Card -->
-    <string name="status_lsposed_active">LSPosed 模块已生效</string>
-    <string name="status_lsposed_inactive">LSPosed 模块未激活</string>
-    <string name="status_lsposed_desc_active">咖啡因已无缝接入 OxygenOS 系统控制中心与唤醒锁</string>
-    <string name="status_lsposed_desc_inactive">请在 LSPosed 作用域中勾选“系统界面 (SystemUI)”与“Android 系统”，并重启 SystemUI</string>
+    <string name="status_module_unavailable">模块服务不可用</string>
+    <string name="status_module_unavailable_desc">请在兼容 libxposed 的模块管理器中启用本模块</string>
+    <string name="status_scope_missing">SystemUI 不在作用域中</string>
+    <string name="status_scope_missing_desc">请将“系统界面 (SystemUI)”加入作用域，然后重启 SystemUI</string>
+    <string name="status_hook_unavailable">SystemUI Hook 未生效</string>
+    <string name="status_hook_checking_desc">正在检查 SystemUI Hook 是否在线…</string>
+    <string name="status_hook_unavailable_desc">启用或更新模块后，请重启 SystemUI</string>
     
     <!-- Control Card -->
     <string name="control_title">快捷测试与控制</string>
@@ -30,7 +33,7 @@
     
     <!-- Help / Setup -->
     <string name="help_title">OxygenOS 使用与配置指引</string>
-    <string name="help_step1">1. 在 LSPosed 中激活本模块，作用域勾选“系统界面 (SystemUI)”与“Android 系统”。</string>
+    <string name="help_step1">1. 在 Xposed 模块管理器中激活本模块，作用域只需勾选“系统界面 (SystemUI)”。</string>
     <string name="help_step2">2. 下拉通知栏控制中心，点击右上角编辑（铅笔）图标，将“咖啡因”图块拖入常用区域。</string>
     <string name="help_step3">3. 点击图块即可轮流切换常亮时长 (5m → 10m → 30m → 1h → ∞ → 关闭)，标题将实时显示倒计时！</string>
     <string name="btn_add_qs_tile">直接添加图块到控制中心</string>

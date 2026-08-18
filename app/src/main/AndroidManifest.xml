@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".CaffeineApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -21,21 +22,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Caffeine"
         tools:targetApi="35">
-
-        <!-- LSPosed / Xposed Module Metadata -->
-        <meta-data
-            android:name="xposedmodule"
-            android:value="true" />
-        <meta-data
-            android:name="xposeddescription"
-            android:resource="@string/xposed_description"
-            android:value="@string/xposed_description" />
-        <meta-data
-            android:name="xposedminversion"
-            android:value="93" />
-        <meta-data
-            android:name="xposedscope"
-            android:resource="@array/xposed_scopes" />
 
         <!-- Main Configuration Activity -->
         <activity

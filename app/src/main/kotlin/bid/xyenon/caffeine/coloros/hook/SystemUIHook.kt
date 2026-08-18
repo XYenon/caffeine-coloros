@@ -1,6 +1,7 @@
 package bid.xyenon.caffeine.coloros.hook
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -31,6 +32,8 @@ object SystemUIHook {
     fun init(classLoader: ClassLoader) {
         Log.i(TAG, "Initializing SystemUI Hook for OxygenOS / ColorOS safely...")
 
+        initializeEngineFromSystemUiApplication(classLoader)
+
         try {
             hookQSTileClasses(classLoader)
         } catch (t: Throwable) {
@@ -47,6 +50,31 @@ object SystemUIHook {
             hookQSTileHost(classLoader)
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to hook QSTileHost", t)
+        }
+    }
+
+    private fun initializeEngineFromSystemUiApplication(classLoader: ClassLoader) {
+        runCatching {
+            val activityThread = Class.forName("android.app.ActivityThread")
+            val currentApplication = activityThread.getDeclaredMethod("currentApplication").invoke(null)
+            if (currentApplication is Application) {
+                CaffeineEngine.getInstance(currentApplication)
+            }
+        }.onFailure { Log.d(TAG, "SystemUI Application is not ready yet") }
+
+        val applicationClass = DexHelper.findClassIfExists(
+            "com.android.systemui.SystemUIApplication",
+            classLoader
+        ) ?: return
+        val onCreate = applicationClass.declaredMethods.firstOrNull {
+            it.name == "onCreate" && it.parameterTypes.isEmpty()
+        } ?: return
+        onCreate.isAccessible = true
+        HookBridge.hookAfter(onCreate) { application, _, _ ->
+            if (application is Application) {
+                CaffeineEngine.getInstance(application)
+                Log.i(TAG, "SystemUI state owner and hook responder initialized")
+            }
         }
     }
 

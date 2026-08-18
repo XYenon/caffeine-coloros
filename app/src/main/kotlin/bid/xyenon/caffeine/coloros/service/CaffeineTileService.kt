@@ -49,6 +49,7 @@ class CaffeineTileService : TileService() {
     override fun onClick() {
         super.onClick()
         Log.d(TAG, "onClick in TileService")
+        engine.setOwnsState(true)
         engine.cycleNext()
         updateTileState()
 

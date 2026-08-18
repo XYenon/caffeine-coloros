@@ -7,10 +7,13 @@
     <string name="tile_state_infinite">∞</string>
     
     <!-- Status Card -->
-    <string name="status_lsposed_active">LSPosed Hook Active</string>
-    <string name="status_lsposed_inactive">LSPosed Hook Inactive</string>
-    <string name="status_lsposed_desc_active">Caffeine is integrated into OxygenOS SystemUI</string>
-    <string name="status_lsposed_desc_inactive">Please enable module in LSPosed and reboot SystemUI</string>
+    <string name="status_module_unavailable">Module service unavailable</string>
+    <string name="status_module_unavailable_desc">Enable this module in a libxposed-compatible manager</string>
+    <string name="status_scope_missing">System UI is not in scope</string>
+    <string name="status_scope_missing_desc">Add System UI to the module scope, then restart SystemUI</string>
+    <string name="status_hook_unavailable">SystemUI hook is not active</string>
+    <string name="status_hook_checking_desc">Checking whether the SystemUI hook is running…</string>
+    <string name="status_hook_unavailable_desc">Restart SystemUI after enabling or updating the module</string>
     
     <!-- Control Card -->
     <string name="control_title">Quick Test &amp; Toggle</string>
@@ -30,7 +33,7 @@
     
     <!-- Help / Setup -->
     <string name="help_title">OxygenOS Setup Guide</string>
-    <string name="help_step1">1. Enable this module in LSPosed and select "System UI" &amp; "System Framework".</string>
+    <string name="help_step1">1. Enable this module in your Xposed manager and select "System UI".</string>
     <string name="help_step2">2. Swipe down Quick Settings, tap the Edit (Pencil) icon, and drag the Caffeine tile to active tiles.</string>
     <string name="help_step3">3. Tap the tile to cycle: 5m → 10m → 30m → 1h → ∞ → Off.</string>
     <string name="btn_add_qs_tile">Add QS Tile to Panel</string>

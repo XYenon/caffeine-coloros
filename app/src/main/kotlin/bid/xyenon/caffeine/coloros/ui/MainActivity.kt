@@ -1,19 +1,25 @@
 package bid.xyenon.caffeine.coloros.ui
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.StatusBarManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.widget.Toast
+import bid.xyenon.caffeine.coloros.CaffeineApplication
 import bid.xyenon.caffeine.coloros.R
 import bid.xyenon.caffeine.coloros.core.CaffeineConfig
 import bid.xyenon.caffeine.coloros.core.CaffeineEngine
@@ -21,12 +27,49 @@ import bid.xyenon.caffeine.coloros.core.TimeFormatter
 import bid.xyenon.caffeine.coloros.databinding.ActivityMainBinding
 import bid.xyenon.caffeine.coloros.service.CaffeineForegroundService
 import bid.xyenon.caffeine.coloros.service.CaffeineTileService
+import java.util.UUID
 import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
 
+    companion object {
+        private const val HOOK_RESPONSE_TIMEOUT_MS = 1500L
+    }
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var engine: CaffeineEngine
+    private val handler = Handler(Looper.getMainLooper())
+    private var hookActive = false
+    private var hookRequestToken: String? = null
+    private var hookReceiverRegistered = false
+
+    private val serviceListener = CaffeineApplication.ServiceListener {
+        refreshModuleStatus()
+    }
+
+    private val hookResponseTimeout = Runnable {
+        hookRequestToken = null
+        showInactiveStatus(
+            R.string.status_hook_unavailable,
+            R.string.status_hook_unavailable_desc,
+            enableFallback = true
+        )
+    }
+
+    private val hookResponseReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val token = intent?.getStringExtra(CaffeineConfig.EXTRA_REQUEST_TOKEN)
+            if (token == null || token != hookRequestToken) return
+
+            hookRequestToken = null
+            handler.removeCallbacks(hookResponseTimeout)
+            hookActive = true
+            engine.setOwnsState(false)
+            CaffeineForegroundService.stop(this@MainActivity)
+            binding.cardStatus.visibility = View.GONE
+            engine.requestStateSync()
+        }
+    }
 
     private val stateListener = object : CaffeineEngine.StateListener {
         override fun onStateChanged(isActive: Boolean, duration: Int, secondsRemaining: Int) {
@@ -44,10 +87,10 @@ class MainActivity : Activity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        engine = CaffeineEngine.getInstance(this, ownsState = !isLSPosedHookActive())
+        engine = CaffeineEngine.getInstance(this, ownsState = false)
 
         setupCollapsingToolbar()
-        setupStatusCard()
+        setupStatusCardAppearance()
         setupControls()
         setupPreferences()
         setupAddTileButton()
@@ -85,43 +128,98 @@ class MainActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
+        registerHookResponseReceiver()
+        (application as CaffeineApplication).addServiceListener(serviceListener)
         engine.addListener(stateListener)
         engine.requestStateSync()
+        refreshModuleStatus()
         updateUI()
     }
 
     override fun onStop() {
         super.onStop()
+        handler.removeCallbacks(hookResponseTimeout)
+        hookRequestToken = null
+        (application as CaffeineApplication).removeServiceListener(serviceListener)
+        if (hookReceiverRegistered) {
+            unregisterReceiver(hookResponseReceiver)
+            hookReceiverRegistered = false
+        }
         engine.removeListener(stateListener)
     }
 
-    /**
-     * Hook target for LSPosed module.
-     * When LSPosed hook is active, this method is hooked to return true.
-     */
-    fun isLSPosedHookActive(): Boolean {
-        return false
-    }
-
-    private fun setupStatusCard() {
-        if (isLSPosedHookActive()) {
-            binding.cardStatus.visibility = View.GONE
-            return
-        }
-
+    private fun setupStatusCardAppearance() {
         binding.ivStatusIcon.setImageResource(R.drawable.ic_caffeine_empty)
         binding.ivStatusIcon.setColorFilter(getColor(R.color.warning))
-        binding.tvStatusTitle.setText(R.string.status_lsposed_inactive)
-        binding.tvStatusDesc.setText(R.string.status_lsposed_desc_inactive)
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag") // The flags overload is unavailable before API 33.
+    private fun registerHookResponseReceiver() {
+        if (hookReceiverRegistered) return
+        val filter = IntentFilter(CaffeineConfig.ACTION_HOOK_PONG)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(hookResponseReceiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(hookResponseReceiver, filter)
+        }
+        hookReceiverRegistered = true
+    }
+
+    private fun refreshModuleStatus() {
+        handler.removeCallbacks(hookResponseTimeout)
+        hookRequestToken = null
+        hookActive = false
+
+        val app = application as CaffeineApplication
+        when {
+            !app.hasBoundService() -> showInactiveStatus(
+                R.string.status_module_unavailable,
+                R.string.status_module_unavailable_desc,
+                enableFallback = true
+            )
+
+            !app.isSystemUiInScope() -> showInactiveStatus(
+                R.string.status_scope_missing,
+                R.string.status_scope_missing_desc,
+                enableFallback = true
+            )
+
+            else -> requestHookStatus()
+        }
+    }
+
+    private fun requestHookStatus() {
+        binding.cardStatus.visibility = View.VISIBLE
+        binding.tvStatusTitle.setText(R.string.status_hook_unavailable)
+        binding.tvStatusDesc.setText(R.string.status_hook_checking_desc)
+
+        val token = UUID.randomUUID().toString()
+        hookRequestToken = token
+        val intent = Intent(CaffeineConfig.ACTION_HOOK_PING).apply {
+            setPackage(CaffeineConfig.SYSTEM_UI_PACKAGE)
+            putExtra(CaffeineConfig.EXTRA_REQUEST_TOKEN, token)
+            putExtra(CaffeineEngine.EXTRA_SENDER_PID, android.os.Process.myPid())
+        }
+        sendBroadcast(intent)
+        handler.postDelayed(hookResponseTimeout, HOOK_RESPONSE_TIMEOUT_MS)
+    }
+
+    private fun showInactiveStatus(titleRes: Int, descriptionRes: Int, enableFallback: Boolean) {
+        hookActive = false
+        binding.cardStatus.visibility = View.VISIBLE
+        binding.tvStatusTitle.setText(titleRes)
+        binding.tvStatusDesc.setText(descriptionRes)
+        if (enableFallback) engine.setOwnsState(true)
     }
 
     private fun setupControls() {
         binding.btnToggleCaffeine.setOnClickListener {
             performFeedback()
+            if (!hookActive) engine.setOwnsState(true)
             engine.cycleNext()
             updateUI()
 
-            if (!isLSPosedHookActive()) {
+            if (!hookActive) {
                 if (engine.isActive) {
                     CaffeineForegroundService.start(this)
                 } else {

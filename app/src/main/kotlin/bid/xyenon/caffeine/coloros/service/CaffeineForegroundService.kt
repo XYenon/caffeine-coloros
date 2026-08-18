@@ -7,7 +7,6 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import bid.xyenon.caffeine.coloros.R
 import bid.xyenon.caffeine.coloros.core.CaffeineEngine
@@ -22,11 +21,7 @@ class CaffeineForegroundService : Service() {
 
         fun start(context: Context, remainingSeconds: Int) {
             val intent = Intent(context, CaffeineForegroundService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
 
         fun stop(context: Context) {
@@ -76,18 +71,16 @@ class CaffeineForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                getString(R.string.notification_channel_name),
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Shows remaining caffeine wake time"
-                setShowBadge(false)
-            }
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-            nm?.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(R.string.notification_channel_name),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Shows remaining caffeine wake time"
+            setShowBadge(false)
         }
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+        nm?.createNotificationChannel(channel)
     }
 
     private fun buildNotification(remainingSeconds: Int): Notification {
@@ -104,14 +97,7 @@ class CaffeineForegroundService : Service() {
             TimeFormatter.formatDuration(remainingSeconds)
         }
 
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Notification.Builder(this, CHANNEL_ID)
-        } else {
-            @Suppress("DEPRECATION")
-            Notification.Builder(this)
-        }
-
-        return builder
+        return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(getString(R.string.notification_text, timeStr))
             .setSmallIcon(R.drawable.ic_caffeine_tile)

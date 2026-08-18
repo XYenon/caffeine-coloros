@@ -89,11 +89,6 @@ class MainActivity : Activity() {
         updateUI()
     }
 
-    override fun onResume() {
-        super.onResume()
-        collapseStatusBar()
-    }
-
     override fun onStop() {
         super.onStop()
         engine.removeListener(stateListener)
@@ -215,26 +210,8 @@ class MainActivity : Activity() {
         try {
             binding.btnToggleCaffeine.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         } catch (t: Throwable) {
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator?.vibrate(30)
-            }
-        }
-    }
-
-    private fun collapseStatusBar() {
-        try {
-            @Suppress("DEPRECATION")
-            sendBroadcast(Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS))
-            val statusBarService = getSystemService("statusbar")
-            val collapseMethod = statusBarService?.javaClass?.getMethod("collapsePanels")
-            collapseMethod?.isAccessible = true
-            collapseMethod?.invoke(statusBarService)
-        } catch (t: Throwable) {
-            // Ignore
+            val vibrator = getSystemService(Vibrator::class.java)
+            vibrator?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
         }
     }
 }

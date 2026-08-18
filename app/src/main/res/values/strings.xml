@@ -7,7 +7,6 @@
     <string name="tile_state_infinite">∞</string>
     
     <!-- Status Card -->
-    <string name="status_title">Status</string>
     <string name="status_lsposed_active">LSPosed Hook Active</string>
     <string name="status_lsposed_inactive">LSPosed Hook Inactive</string>
     <string name="status_lsposed_desc_active">Caffeine is integrated into OxygenOS SystemUI</string>
@@ -17,7 +16,6 @@
     <string name="control_title">Quick Test &amp; Toggle</string>
     <string name="control_desc">Tap to cycle durations or deactivate Caffeine</string>
     <string name="btn_toggle">Toggle Caffeine</string>
-    <string name="current_duration">Current state: %s</string>
     
     <!-- Preferences -->
     <string name="pref_category_behavior">Behavior Settings</string>

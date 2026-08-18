@@ -1,9 +1,9 @@
 package bid.xyenon.caffeine.coloros.hook
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -50,6 +50,7 @@ object SystemUIHook {
         }
     }
 
+    @SuppressLint("MissingPermission") // Runs inside the privileged SystemUI process.
     private fun hookQSTileClasses(classLoader: ClassLoader) {
         val targetClasses = listOf(
             "com.android.systemui.qs.tileimpl.QSTileImpl",
@@ -227,14 +228,8 @@ object SystemUIHook {
             if (viewArg != null) {
                 viewArg.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
             } else {
-                @Suppress("DEPRECATION")
-                val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    vibrator?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator?.vibrate(30)
-                }
+                val vibrator = context.getSystemService(Vibrator::class.java)
+                vibrator?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
             }
         } catch (t: Throwable) {
             // Ignore haptic failure

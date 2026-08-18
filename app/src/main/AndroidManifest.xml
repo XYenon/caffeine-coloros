@@ -80,7 +80,8 @@
             android:name=".provider.SettingsProvider"
             android:authorities="bid.xyenon.caffeine.coloros.provider"
             android:exported="true"
-            android:multiprocess="true" />
+            android:multiprocess="true"
+            tools:ignore="ExportedContentProvider" />
 
     </application>
 

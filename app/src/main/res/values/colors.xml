@@ -1,20 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="primary">#007A5A</color>
-    <color name="on_primary">#FFFFFF</color>
     <color name="primary_action">#008766</color>
     <color name="on_primary_action">#FFFFFF</color>
-    <color name="primary_container">#C7F2E2</color>
-    <color name="on_primary_container">#002116</color>
-    
-    <color name="secondary">#46655A</color>
-    <color name="on_secondary">#FFFFFF</color>
-    <color name="secondary_container">#D4EDE3</color>
-    <color name="on_secondary_container">#092017</color>
 
-    <color name="surface">#F8FBF9</color>
-    <color name="on_surface">#17201C</color>
-    <color name="surface_variant">#E5ECE8</color>
     <color name="on_surface_variant">#53615B</color>
 
     <color name="background">#F7FAF8</color>

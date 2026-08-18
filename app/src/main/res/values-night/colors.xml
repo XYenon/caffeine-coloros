@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="primary">#63DFB7</color>
-    <color name="on_primary">#00382A</color>
     <color name="primary_action">#078863</color>
     <color name="on_primary_action">#FFFFFF</color>
 
-    <color name="surface">#18201C</color>
-    <color name="on_surface">#E4ECE8</color>
-    <color name="surface_variant">#26332D</color>
     <color name="on_surface_variant">#A9B8B1</color>
     <color name="background">#111714</color>
     <color name="on_background">#E4ECE8</color>

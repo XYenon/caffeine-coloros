@@ -7,7 +7,6 @@
     <string name="tile_state_infinite">∞</string>
     
     <!-- Status Card -->
-    <string name="status_title">模块运行状态</string>
     <string name="status_lsposed_active">LSPosed 模块已生效</string>
     <string name="status_lsposed_inactive">LSPosed 模块未激活</string>
     <string name="status_lsposed_desc_active">咖啡因已无缝接入 OxygenOS 系统控制中心与唤醒锁</string>
@@ -17,7 +16,6 @@
     <string name="control_title">快捷测试与控制</string>
     <string name="control_desc">点击循环切换常量亮屏时间或关闭咖啡因</string>
     <string name="btn_toggle">切换状态</string>
-    <string name="current_duration">当前状态：%s</string>
     
     <!-- Preferences -->
     <string name="pref_category_behavior">行为偏好设置</string>

@@ -12,7 +12,7 @@ import android.os.PowerManager
 import android.os.Process
 import android.util.Log
 
-class CaffeineEngine(private val context: Context) {
+class CaffeineEngine(context: Context) {
 
     companion object {
         private const val TAG = "CaffeineEngine"
@@ -20,12 +20,13 @@ class CaffeineEngine(private val context: Context) {
 
         const val EXTRA_SENDER_PID = "sender_pid"
 
+        @SuppressLint("StaticFieldLeak") // The engine stores applicationContext only.
         @Volatile
         private var instance: CaffeineEngine? = null
 
         fun getInstance(context: Context): CaffeineEngine {
             return instance ?: synchronized(this) {
-                instance ?: CaffeineEngine(context.applicationContext ?: context).also { instance = it }
+                instance ?: CaffeineEngine(context).also { instance = it }
             }
         }
     }
@@ -35,6 +36,7 @@ class CaffeineEngine(private val context: Context) {
         fun onTick(secondsRemaining: Int, formattedTime: String)
     }
 
+    private val context = context.applicationContext
     private val handler = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
     private val listeners = mutableListOf<StateListener>()
@@ -114,6 +116,7 @@ class CaffeineEngine(private val context: Context) {
         registerReceivers()
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag") // The flags overload is unavailable before API 33.
     private fun registerReceivers() {
         if (!isReceiverRegistered) {
             try {

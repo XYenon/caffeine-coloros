@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Caffeine</string>
+    <string name="xposed_description">LineageOS Caffeine Quick Settings tile for OxygenOS / ColorOS with live countdown timer.</string>
+    <string name="tile_caffeine">Caffeine</string>
+    <string name="tile_state_off">Off</string>
+    <string name="tile_state_infinite">∞</string>
+    
+    <!-- Status Card -->
+    <string name="status_title">Status</string>
+    <string name="status_lsposed_active">LSPosed Hook Active</string>
+    <string name="status_lsposed_inactive">LSPosed Hook Inactive</string>
+    <string name="status_lsposed_desc_active">Caffeine is integrated into OxygenOS SystemUI</string>
+    <string name="status_lsposed_desc_inactive">Please enable module in LSPosed and reboot SystemUI</string>
+    
+    <!-- Control Card -->
+    <string name="control_title">Quick Test &amp; Toggle</string>
+    <string name="control_desc">Tap to cycle durations or deactivate Caffeine</string>
+    <string name="btn_toggle">Toggle Caffeine</string>
+    <string name="current_duration">Current state: %s</string>
+    
+    <!-- Preferences -->
+    <string name="pref_category_behavior">Behavior Settings</string>
+    <string name="pref_screen_off_title">Turn off on Screen Lock</string>
+    <string name="pref_screen_off_desc">Automatically deactivate Caffeine when the screen turns off or locks (LineageOS standard behavior)</string>
+    
+    <string name="pref_haptic_title">Haptic Feedback</string>
+    <string name="pref_haptic_desc">Vibrate lightly when toggling the Caffeine tile</string>
+
+    <string name="pref_durations_title">Cycle Durations</string>
+    <string name="pref_durations_desc">Sequence of durations: 5 min → 10 min → 30 min → 1 hour → ∞ → Off</string>
+    
+    <!-- Help / Setup -->
+    <string name="help_title">OxygenOS Setup Guide</string>
+    <string name="help_step1">1. Enable this module in LSPosed and select "System UI" &amp; "System Framework".</string>
+    <string name="help_step2">2. Swipe down Quick Settings, tap the Edit (Pencil) icon, and drag the Caffeine tile to active tiles.</string>
+    <string name="help_step3">3. Tap the tile to cycle: 5m → 10m → 30m → 1h → ∞ → Off.</string>
+    <string name="btn_add_qs_tile">Add QS Tile to Panel</string>
+    <string name="tile_added_success">Tile addition requested!</string>
+    <string name="notification_channel_name">Caffeine Active Notification</string>
+    <string name="notification_title">Caffeine is keeping screen awake</string>
+    <string name="notification_text">Time remaining: %s</string>
+</resources>

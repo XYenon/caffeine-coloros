@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">咖啡因</string>
+    <string name="xposed_description">专为 OxygenOS / ColorOS 打造的 LineageOS 咖啡因快捷图块，支持动态倒计时与多挡位常亮。</string>
+    <string name="tile_caffeine">咖啡因</string>
+    <string name="tile_state_off">关闭</string>
+    <string name="tile_state_infinite">∞</string>
+    
+    <!-- Status Card -->
+    <string name="status_title">模块运行状态</string>
+    <string name="status_lsposed_active">LSPosed 模块已生效</string>
+    <string name="status_lsposed_inactive">LSPosed 模块未激活</string>
+    <string name="status_lsposed_desc_active">咖啡因已无缝接入 OxygenOS 系统控制中心与唤醒锁</string>
+    <string name="status_lsposed_desc_inactive">请在 LSPosed 作用域中勾选“系统界面 (SystemUI)”与“Android 系统”，并重启 SystemUI</string>
+    
+    <!-- Control Card -->
+    <string name="control_title">快捷测试与控制</string>
+    <string name="control_desc">点击循环切换常量亮屏时间或关闭咖啡因</string>
+    <string name="btn_toggle">切换状态</string>
+    <string name="current_duration">当前状态：%s</string>
+    
+    <!-- Preferences -->
+    <string name="pref_category_behavior">行为偏好设置</string>
+    <string name="pref_screen_off_title">息屏或锁屏时自动关闭</string>
+    <string name="pref_screen_off_desc">当按电源键熄灭屏幕或放入口袋时自动释放亮屏锁（LineageOS 标准行为）</string>
+    
+    <string name="pref_haptic_title">触觉震动反馈</string>
+    <string name="pref_haptic_desc">每次点击快捷图块切换状态时产生轻微触感震动</string>
+
+    <string name="pref_durations_title">循环时间序列</string>
+    <string name="pref_durations_desc">点击循环阶梯：5分钟 → 10分钟 → 30分钟 → 1小时 → 无限常亮(∞) → 关闭</string>
+    
+    <!-- Help / Setup -->
+    <string name="help_title">OxygenOS 使用与配置指引</string>
+    <string name="help_step1">1. 在 LSPosed 中激活本模块，作用域勾选“系统界面 (SystemUI)”与“Android 系统”。</string>
+    <string name="help_step2">2. 下拉通知栏控制中心，点击右上角编辑（铅笔）图标，将“咖啡因”图块拖入常用区域。</string>
+    <string name="help_step3">3. 点击图块即可轮流切换常亮时长 (5m → 10m → 30m → 1h → ∞ → 关闭)，标题将实时显示倒计时！</string>
+    <string name="btn_add_qs_tile">直接添加图块到控制中心</string>
+    <string name="tile_added_success">已向系统发起添加图块请求！</string>
+    <string name="notification_channel_name">咖啡因保持常亮通知</string>
+    <string name="notification_title">咖啡因正在保持屏幕常亮</string>
+    <string name="notification_text">剩余时间：%s</string>
+</resources>

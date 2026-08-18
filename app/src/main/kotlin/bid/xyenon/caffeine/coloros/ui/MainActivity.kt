@@ -1,0 +1,212 @@
+package bid.xyenon.caffeine.coloros.ui
+
+import android.app.Activity
+import android.app.StatusBarManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.Icon
+import android.os.Build
+import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.provider.Settings
+import android.view.HapticFeedbackConstants
+import android.widget.Toast
+import bid.xyenon.caffeine.coloros.R
+import bid.xyenon.caffeine.coloros.core.CaffeineConfig
+import bid.xyenon.caffeine.coloros.core.CaffeineEngine
+import bid.xyenon.caffeine.coloros.core.TimeFormatter
+import bid.xyenon.caffeine.coloros.databinding.ActivityMainBinding
+import bid.xyenon.caffeine.coloros.service.CaffeineForegroundService
+import bid.xyenon.caffeine.coloros.service.CaffeineTileService
+import java.util.concurrent.Executors
+
+class MainActivity : Activity() {
+
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var engine: CaffeineEngine
+
+    private val stateListener = object : CaffeineEngine.StateListener {
+        override fun onStateChanged(isActive: Boolean, duration: Int, secondsRemaining: Int) {
+            runOnUiThread { updateUI() }
+        }
+
+        override fun onTick(secondsRemaining: Int, formattedTime: String) {
+            runOnUiThread { updateUI() }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        engine = CaffeineEngine.getInstance(this)
+
+        setupStatusCard()
+        setupControls()
+        setupPreferences()
+        setupAddTileButton()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        engine.addListener(stateListener)
+        updateUI()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        collapseStatusBar()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        engine.removeListener(stateListener)
+    }
+
+    /**
+     * Hook target for LSPosed module.
+     * When LSPosed hook is active, this method is hooked to return true.
+     */
+    fun isLSPosedHookActive(): Boolean {
+        return false
+    }
+
+    private fun setupStatusCard() {
+        val isHookActive = isLSPosedHookActive()
+
+        if (isHookActive) {
+            binding.ivStatusIcon.setImageResource(R.drawable.ic_caffeine_full)
+            binding.ivStatusIcon.setColorFilter(Color.parseColor("#006C50"))
+            binding.tvStatusTitle.setText(R.string.status_lsposed_active)
+            binding.tvStatusDesc.setText(R.string.status_lsposed_desc_active)
+        } else {
+            binding.ivStatusIcon.setImageResource(R.drawable.ic_caffeine_empty)
+            binding.ivStatusIcon.setColorFilter(Color.parseColor("#8A938E"))
+            binding.tvStatusTitle.setText(R.string.status_lsposed_inactive)
+            binding.tvStatusDesc.setText(R.string.status_lsposed_desc_inactive)
+        }
+    }
+
+    private fun setupControls() {
+        binding.btnToggleCaffeine.setOnClickListener {
+            performFeedback()
+            engine.cycleNext()
+            updateUI()
+
+            if (!isLSPosedHookActive()) {
+                if (engine.isActive) {
+                    CaffeineForegroundService.start(this, engine.secondsRemaining)
+                } else {
+                    CaffeineForegroundService.stop(this)
+                }
+            }
+        }
+    }
+
+    private fun setupPreferences() {
+        val prefs = getSharedPreferences(CaffeineConfig.PREFS_NAME, Context.MODE_PRIVATE)
+
+        val screenOffReset = prefs.getBoolean(CaffeineConfig.KEY_SCREEN_OFF_RESET, true)
+        binding.switchScreenOff.isChecked = screenOffReset
+        engine.resetOnScreenOff = screenOffReset
+
+        binding.switchScreenOff.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(CaffeineConfig.KEY_SCREEN_OFF_RESET, isChecked).apply()
+            engine.resetOnScreenOff = isChecked
+        }
+
+        val haptic = prefs.getBoolean(CaffeineConfig.KEY_HAPTIC_FEEDBACK, true)
+        binding.switchHaptic.isChecked = haptic
+
+        binding.switchHaptic.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(CaffeineConfig.KEY_HAPTIC_FEEDBACK, isChecked).apply()
+        }
+    }
+
+    private fun setupAddTileButton() {
+        binding.btnAddTile.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val statusBarManager = getSystemService(StatusBarManager::class.java)
+                val component = ComponentName(this, CaffeineTileService::class.java)
+                val icon = Icon.createWithResource(this, R.drawable.ic_caffeine_tile)
+                statusBarManager?.requestAddTileService(
+                    component,
+                    getString(R.string.tile_caffeine),
+                    icon,
+                    Executors.newSingleThreadExecutor()
+                ) { resultCode ->
+                    runOnUiThread {
+                        if (resultCode == StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED) {
+                            Toast.makeText(this, R.string.tile_added_success, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } else {
+                try {
+                    val intent = Intent(Settings.ACTION_DISPLAY_SETTINGS)
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(this, R.string.help_step2, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun updateUI() {
+        val isActive = engine.isActive
+        val remaining = engine.secondsRemaining
+
+        val stateText = when {
+            !isActive -> getString(R.string.tile_state_off)
+            engine.isInfinite -> getString(R.string.tile_state_infinite)
+            else -> TimeFormatter.formatDuration(remaining)
+        }
+
+        // Only one primary countdown view on the main screen
+        binding.tvStatePreview.text = stateText
+
+        if (isActive) {
+            binding.tvStatePreview.setTextColor(Color.parseColor("#006C50"))
+            binding.btnToggleCaffeine.setText(R.string.btn_toggle)
+        } else {
+            binding.tvStatePreview.setTextColor(Color.parseColor("#8A938E"))
+            binding.btnToggleCaffeine.setText(R.string.btn_toggle)
+        }
+        // Keep description static so there is no duplicate countdown
+        binding.tvStateDetail.setText(R.string.control_desc)
+    }
+
+    private fun performFeedback() {
+        val prefs = getSharedPreferences(CaffeineConfig.PREFS_NAME, Context.MODE_PRIVATE)
+        if (!prefs.getBoolean(CaffeineConfig.KEY_HAPTIC_FEEDBACK, true)) return
+
+        try {
+            binding.btnToggleCaffeine.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        } catch (t: Throwable) {
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(30)
+            }
+        }
+    }
+
+    private fun collapseStatusBar() {
+        try {
+            @Suppress("DEPRECATION")
+            sendBroadcast(Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS))
+            val statusBarService = getSystemService("statusbar")
+            val collapseMethod = statusBarService?.javaClass?.getMethod("collapsePanels")
+            collapseMethod?.isAccessible = true
+            collapseMethod?.invoke(statusBarService)
+        } catch (t: Throwable) {
+            // Ignore
+        }
+    }
+}

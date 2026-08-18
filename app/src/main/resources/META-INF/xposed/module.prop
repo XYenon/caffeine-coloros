@@ -1,0 +1,8 @@
+minApiVersion=101
+targetApiVersion=102
+staticScope=true
+name=咖啡因 (Caffeine)
+version=1.0.0
+versionCode=1
+author=Antigravity
+description=专为 OxygenOS / ColorOS 打造的 LineageOS 咖啡因快捷图块，支持动态倒计时与多挡位常亮。

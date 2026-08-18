@@ -1,0 +1,23 @@
+[versions]
+agp = "9.3.1"
+libxposed = "102.0.0"
+xposedApi = "82"
+dexkit = "2.2.0"
+gson = "2.14.0"
+androidxCore = "1.13.1"
+androidxAppcompat = "1.7.0"
+material = "1.12.0"
+androidxActivity = "1.9.1"
+
+[libraries]
+dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+libxposed-api = { module = "io.github.libxposed:api", version.ref = "libxposed" }
+xposed-api = { module = "de.robv.android.xposed:api", version.ref = "xposedApi" }
+androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidxAppcompat" }
+material = { module = "com.google.android.material:material", version.ref = "material" }
+androidx-activity = { module = "androidx.activity:activity-ktx", version.ref = "androidxActivity" }
+
+[plugins]
+agp-app = { id = "com.android.application", version.ref = "agp" }

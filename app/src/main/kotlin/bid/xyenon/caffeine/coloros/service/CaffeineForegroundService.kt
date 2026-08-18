@@ -10,7 +10,6 @@ import android.content.Intent
 import android.os.IBinder
 import bid.xyenon.caffeine.coloros.R
 import bid.xyenon.caffeine.coloros.core.CaffeineEngine
-import bid.xyenon.caffeine.coloros.core.TimeFormatter
 import bid.xyenon.caffeine.coloros.ui.MainActivity
 
 class CaffeineForegroundService : Service() {
@@ -19,7 +18,7 @@ class CaffeineForegroundService : Service() {
         private const val CHANNEL_ID = "caffeine_notification_channel"
         private const val NOTIFICATION_ID = 1001
 
-        fun start(context: Context, remainingSeconds: Int) {
+        fun start(context: Context) {
             val intent = Intent(context, CaffeineForegroundService::class.java)
             context.startForegroundService(intent)
         }
@@ -41,9 +40,7 @@ class CaffeineForegroundService : Service() {
             }
         }
 
-        override fun onTick(secondsRemaining: Int, formattedTime: String) {
-            updateNotification(secondsRemaining)
-        }
+        override fun onTick(secondsRemaining: Int, formattedTime: String) = Unit
     }
 
     override fun onCreate() {
@@ -60,7 +57,7 @@ class CaffeineForegroundService : Service() {
         }
         val notification = buildNotification(engine.secondsRemaining)
         startForeground(NOTIFICATION_ID, notification)
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
@@ -91,19 +88,24 @@ class CaffeineForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val timeStr = if (engine.isInfinite) {
-            getString(R.string.tile_state_infinite)
-        } else {
-            TimeFormatter.formatDuration(remainingSeconds)
-        }
-
-        return Notification.Builder(this, CHANNEL_ID)
+        val builder = Notification.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.notification_title))
-            .setContentText(getString(R.string.notification_text, timeStr))
             .setSmallIcon(R.drawable.ic_caffeine_tile)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
-            .build()
+
+        if (engine.isInfinite) {
+            builder.setContentText(
+                getString(R.string.notification_text, getString(R.string.tile_state_infinite))
+            )
+        } else {
+            builder
+                .setWhen(System.currentTimeMillis() + remainingSeconds * 1000L)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
+        }
+
+        return builder.build()
     }
 
     private fun updateNotification(remainingSeconds: Int) {

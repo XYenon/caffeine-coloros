@@ -24,7 +24,7 @@ object SystemUIHook {
     private const val PACKAGE_NAME = "bid.xyenon.caffeine.coloros"
     private const val TILE_SERVICE_CLASS = "bid.xyenon.caffeine.coloros.service.CaffeineTileService"
 
-    private val activeTiles = mutableSetOf<WeakReference<Any>>()
+    private val listeningTiles = mutableSetOf<WeakReference<Any>>()
     private var engineListenerRegistered = false
     private val mainHandler = Handler(Looper.getMainLooper())
 
@@ -98,7 +98,6 @@ object SystemUIHook {
                         val engine = CaffeineEngine.getInstance(context)
 
                         registerEngineListenerIfNeeded(context)
-                        trackTileInstance(tile)
 
                         // Update State fields
                         val isActive = engine.isActive
@@ -140,7 +139,24 @@ object SystemUIHook {
                 }
             }
 
-            // 3. Hook getLongClickIntent
+            // 3. Only refresh the countdown while the tile is being displayed.
+            val setListeningMethods = clazz.declaredMethods.filter {
+                it.name == "handleSetListening"
+            }
+            for (method in setListeningMethods) {
+                HookBridge.hookAfter(method) { tile, args, _ ->
+                    if (tile == null || !isCaffeineTile(tile)) return@hookAfter
+                    val isListening = args.filterIsInstance<Boolean>().lastOrNull() ?: return@hookAfter
+                    if (isListening) {
+                        getTileContext(tile)?.let { registerEngineListenerIfNeeded(it) }
+                        trackListeningTile(tile)
+                    } else {
+                        untrackListeningTile(tile)
+                    }
+                }
+            }
+
+            // 4. Hook getLongClickIntent
             val getLongClickIntentMethods = clazz.declaredMethods.filter { it.name == "getLongClickIntent" }
             for (method in getLongClickIntentMethods) {
                 HookBridge.hook(method) { tile, _, proceed ->
@@ -334,9 +350,9 @@ object SystemUIHook {
         }
     }
 
-    private fun trackTileInstance(tile: Any) {
-        synchronized(activeTiles) {
-            val iterator = activeTiles.iterator()
+    private fun trackListeningTile(tile: Any) {
+        synchronized(listeningTiles) {
+            val iterator = listeningTiles.iterator()
             var exists = false
             while (iterator.hasNext()) {
                 val ref = iterator.next().get()
@@ -347,8 +363,14 @@ object SystemUIHook {
                 }
             }
             if (!exists) {
-                activeTiles.add(WeakReference(tile))
+                listeningTiles.add(WeakReference(tile))
             }
+        }
+    }
+
+    private fun untrackListeningTile(tile: Any) {
+        synchronized(listeningTiles) {
+            listeningTiles.removeAll { it.get() == null || it.get() === tile }
         }
     }
 
@@ -359,18 +381,23 @@ object SystemUIHook {
         val engine = CaffeineEngine.getInstance(context)
         engine.addListener(object : CaffeineEngine.StateListener {
             override fun onStateChanged(isActive: Boolean, duration: Int, secondsRemaining: Int) {
-                mainHandler.post { refreshAllActiveTiles() }
+                mainHandler.post { refreshAllListeningTiles() }
             }
 
             override fun onTick(secondsRemaining: Int, formattedTime: String) {
-                mainHandler.post { refreshAllActiveTiles() }
+                val hasListeningTiles = synchronized(listeningTiles) {
+                    listeningTiles.any { it.get() != null }
+                }
+                if (hasListeningTiles) {
+                    mainHandler.post { refreshAllListeningTiles() }
+                }
             }
         })
     }
 
-    private fun refreshAllActiveTiles() {
-        synchronized(activeTiles) {
-            val iterator = activeTiles.iterator()
+    private fun refreshAllListeningTiles() {
+        synchronized(listeningTiles) {
+            val iterator = listeningTiles.iterator()
             while (iterator.hasNext()) {
                 val tile = iterator.next().get()
                 if (tile != null) {

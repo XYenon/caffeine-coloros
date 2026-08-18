@@ -44,7 +44,7 @@ class MainActivity : Activity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        engine = CaffeineEngine.getInstance(this)
+        engine = CaffeineEngine.getInstance(this, ownsState = !isLSPosedHookActive())
 
         setupCollapsingToolbar()
         setupStatusCard()
@@ -123,7 +123,7 @@ class MainActivity : Activity() {
 
             if (!isLSPosedHookActive()) {
                 if (engine.isActive) {
-                    CaffeineForegroundService.start(this, engine.secondsRemaining)
+                    CaffeineForegroundService.start(this)
                 } else {
                     CaffeineForegroundService.stop(this)
                 }

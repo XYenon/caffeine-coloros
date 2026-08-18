@@ -54,7 +54,7 @@ class CaffeineTileService : TileService() {
 
         // In fallback standalone mode, start/stop foreground service
         if (engine.isActive) {
-            CaffeineForegroundService.start(this, engine.secondsRemaining)
+            CaffeineForegroundService.start(this)
         } else {
             CaffeineForegroundService.stop(this)
         }

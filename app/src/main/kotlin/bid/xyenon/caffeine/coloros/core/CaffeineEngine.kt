@@ -12,7 +12,7 @@ import android.os.PowerManager
 import android.os.Process
 import android.util.Log
 
-class CaffeineEngine(context: Context) {
+class CaffeineEngine(context: Context, private val ownsState: Boolean) {
 
     companion object {
         private const val TAG = "CaffeineEngine"
@@ -24,9 +24,9 @@ class CaffeineEngine(context: Context) {
         @Volatile
         private var instance: CaffeineEngine? = null
 
-        fun getInstance(context: Context): CaffeineEngine {
+        fun getInstance(context: Context, ownsState: Boolean = true): CaffeineEngine {
             return instance ?: synchronized(this) {
-                instance ?: CaffeineEngine(context).also { instance = it }
+                instance ?: CaffeineEngine(context, ownsState).also { instance = it }
             }
         }
     }
@@ -67,12 +67,22 @@ class CaffeineEngine(context: Context) {
                 if (secondsRemaining > 0) {
                     handler.postDelayed(this, 1000L)
                 } else {
-                    Log.d(TAG, "Countdown reached 0, deactivating Caffeine")
-                    deactivate()
+                    finishCountdown()
                 }
             } else {
-                deactivate()
+                finishCountdown()
             }
+        }
+    }
+
+    private fun finishCountdown() {
+        if (ownsState) {
+            Log.d(TAG, "Countdown reached 0, deactivating Caffeine")
+            deactivate()
+        } else {
+            currentDuration = CaffeineConfig.OFF_DURATION
+            secondsRemaining = 0
+            notifyStateListeners()
         }
     }
 
@@ -126,12 +136,14 @@ class CaffeineEngine(context: Context) {
     private fun registerReceivers() {
         if (!isReceiverRegistered) {
             try {
-                // 1. System broadcast receiver for screen off
-                val screenFilter = IntentFilter(Intent.ACTION_SCREEN_OFF)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    context.registerReceiver(screenReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
-                } else {
-                    context.registerReceiver(screenReceiver, screenFilter)
+                // 1. Only the state owner handles screen-off deactivation.
+                if (ownsState) {
+                    val screenFilter = IntentFilter(Intent.ACTION_SCREEN_OFF)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        context.registerReceiver(screenReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
+                    } else {
+                        context.registerReceiver(screenReceiver, screenFilter)
+                    }
                 }
 
                 // 2. Custom IPC broadcast receiver for state sync
@@ -158,11 +170,15 @@ class CaffeineEngine(context: Context) {
                 listener.onStateChanged(isActive, currentDuration, secondsRemaining)
             }
         }
+        if (!ownsState) scheduleCountdownIfNeeded()
     }
 
     fun removeListener(listener: StateListener) {
         synchronized(listeners) {
             listeners.remove(listener)
+            if (!ownsState && listeners.isEmpty()) {
+                handler.removeCallbacks(countdownRunnable)
+            }
         }
     }
 
@@ -178,6 +194,11 @@ class CaffeineEngine(context: Context) {
     }
 
     private fun notifyStateChanged() {
+        notifyStateListeners()
+        broadcastState()
+    }
+
+    private fun notifyStateListeners() {
         synchronized(listeners) {
             val list = ArrayList(listeners)
             for (l in list) {
@@ -188,7 +209,6 @@ class CaffeineEngine(context: Context) {
                 }
             }
         }
-        broadcastState()
     }
 
     private fun notifyTick(sec: Int, formatted: String) {
@@ -224,23 +244,21 @@ class CaffeineEngine(context: Context) {
         secondsRemaining = remaining
 
         if (duration == CaffeineConfig.OFF_DURATION) {
-            releaseWakeLock()
-        } else {
+            if (ownsState) releaseWakeLock()
+        } else if (ownsState) {
             acquireWakeLock()
-            if (!isInfinite && secondsRemaining > 0) {
-                handler.postDelayed(countdownRunnable, 1000L)
-            }
         }
 
-        synchronized(listeners) {
-            val list = ArrayList(listeners)
-            for (l in list) {
-                try {
-                    l.onStateChanged(isActive, currentDuration, secondsRemaining)
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Error in sync listener", t)
-                }
-            }
+        scheduleCountdownIfNeeded()
+        notifyStateListeners()
+    }
+
+    private fun scheduleCountdownIfNeeded() {
+        if (!isActive || isInfinite || secondsRemaining <= 0) return
+        val shouldRun = ownsState || synchronized(listeners) { listeners.isNotEmpty() }
+        if (shouldRun) {
+            handler.removeCallbacks(countdownRunnable)
+            handler.postDelayed(countdownRunnable, 1000L)
         }
     }
 
@@ -272,15 +290,13 @@ class CaffeineEngine(context: Context) {
         if (durationSeconds == CaffeineConfig.OFF_DURATION) {
             currentDuration = CaffeineConfig.OFF_DURATION
             secondsRemaining = 0
-            releaseWakeLock()
+            if (ownsState) releaseWakeLock()
             Log.d(TAG, "Caffeine deactivated")
         } else {
             currentDuration = durationSeconds
             secondsRemaining = if (durationSeconds == CaffeineConfig.INFINITY_DURATION) -1 else durationSeconds
-            acquireWakeLock()
-            if (!isInfinite) {
-                handler.postDelayed(countdownRunnable, 1000L)
-            }
+            if (ownsState) acquireWakeLock()
+            scheduleCountdownIfNeeded()
             Log.d(TAG, "Caffeine activated with duration: $durationSeconds seconds")
         }
 
@@ -297,10 +313,7 @@ class CaffeineEngine(context: Context) {
             if (wakeLock == null) {
                 val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
                 @Suppress("DEPRECATION")
-                val flags = PowerManager.FULL_WAKE_LOCK or
-                        PowerManager.ACQUIRE_CAUSES_WAKEUP or
-                        PowerManager.ON_AFTER_RELEASE
-                wakeLock = pm?.newWakeLock(flags, WAKE_LOCK_TAG)
+                wakeLock = pm?.newWakeLock(PowerManager.FULL_WAKE_LOCK, WAKE_LOCK_TAG)
                 wakeLock?.setReferenceCounted(false)
             }
             if (wakeLock?.isHeld == false) {
@@ -328,6 +341,7 @@ class CaffeineEngine(context: Context) {
         if (isReceiverRegistered) {
             try {
                 context.unregisterReceiver(ipcReceiver)
+                if (ownsState) context.unregisterReceiver(screenReceiver)
             } catch (t: Throwable) {
                 // Ignore
             }
